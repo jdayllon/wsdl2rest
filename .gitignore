@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Generated file
+app/wsdl.py
+
+# Others
+Pipfile.lock
