@@ -1,10 +1,29 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, Depends, HTTPException
+import zeep
+import inspect
+from logging.config import dictConfig
+import logging
+from config import LogConfig
 
-app = FastAPI()
+dictConfig(LogConfig().dict())
+logger = logging.getLogger("wsdl-wrapper")
+
+WSDL_URL = "http://www.dneonline.com/calculator.asmx?WSDL"
+
+client = zeep.Client(WSDL_URL)
+
+router = APIRouter(
+    prefix="/soap",
+    tags=["wsdl-wrapper"],
+    responses={404: {"description": "Not found"}},
+)
 
 {% for operation in operations_definition %}
-@app.get("/{{operation.operation_name.lower()}}/{{operation.operation_qs_params}}")
+@router.get("/{{operation.operation_name.lower()}}/{% for param in operation.operation_params_lst %}{%raw%}{{% endraw %}{{param}}{%raw%}}{% endraw %}/{% endfor %}")
 def call_{{operation.operation_name.lower()}}({{operation.operation_fun_params}}):
+
+    logger.info(f"Called: call_{{operation.operation_name.lower()}} > {%raw%}{locals()}{% endraw %}")
+
     wsdl_params = {}
     {% for param in operation.operation_params_lst %}
     if {{param}} is not None:

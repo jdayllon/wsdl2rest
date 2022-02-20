@@ -85,5 +85,5 @@ template = templateEnv.get_template(TEMPLATE_FILE)
 rest_api_base_code = template.render(operations_definition=operations_definition)  # this is where to put args to the template renderer
 
 # to save the results
-with open("app/main.py", "w") as fh:
+with open("app/wsdl.py", "w") as fh:
     fh.write(rest_api_base_code)
