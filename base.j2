@@ -1,0 +1,14 @@
+from fastapi import FastAPI
+
+app = FastAPI()
+
+{% for operation in operations_definition %}
+@app.get("/{{operation.operation_name.lower()}}/{{operation.operation_qs_params}}")
+def call_{{operation.operation_name.lower()}}({{operation.operation_fun_params}}):
+    wsdl_params = {}
+    {% for param in operation.operation_params_lst %}
+    if {{param}} is not None:
+      wsdl_params["{{param}}"] = {{param}}
+    {% endfor %}
+    return client.service.{{operation.operation_name}}(**wsdl_params)
+{% endfor %}
