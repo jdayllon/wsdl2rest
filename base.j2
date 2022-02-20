@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 import zeep
 import inspect
+
 from logging.config import dictConfig
 import logging
 from config import LogConfig
@@ -8,9 +9,7 @@ from config import LogConfig
 dictConfig(LogConfig().dict())
 logger = logging.getLogger("wsdl-wrapper")
 
-WSDL_URL = "http://www.dneonline.com/calculator.asmx?WSDL"
-
-client = zeep.Client(WSDL_URL)
+client = zeep.Client('{{WSDL_URL}}')
 
 router = APIRouter(
     prefix="/soap",

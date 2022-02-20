@@ -1,6 +1,7 @@
 import jinja2, zeep
+import os 
 
-WSDL_URL = "http://www.dneonline.com/calculator.asmx?WSDL"
+WSDL_URL = os.environ['WSDL_URL']
 
 client = zeep.Client(WSDL_URL)
 
@@ -76,13 +77,12 @@ for cur_operation in list(operations.keys()):
     'operation_params_lst': cur_params,
   }]
 
-  
 # Prints the REST API definition
 templateLoader = jinja2.FileSystemLoader(searchpath="./")
 templateEnv = jinja2.Environment(loader=templateLoader)
 TEMPLATE_FILE = "base.j2"
 template = templateEnv.get_template(TEMPLATE_FILE)
-rest_api_base_code = template.render(operations_definition=operations_definition)  # this is where to put args to the template renderer
+rest_api_base_code = template.render(operations_definition=operations_definition, WSDL_URL=WSDL_URL)  # this is where to put args to the template renderer
 
 # to save the results
 with open("app/wsdl.py", "w") as fh:
