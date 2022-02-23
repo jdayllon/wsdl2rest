@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 import zeep
+from zeep import helpers
 import inspect
+import json
+
+from typing import Any, Dict, AnyStr, List, Union
 
 from logging.config import dictConfig
 import logging
@@ -11,6 +15,10 @@ logger = logging.getLogger("wsdl-wrapper")
 
 client = zeep.Client('{{WSDL_URL}}')
 
+JSONObject = Dict[AnyStr, Any]
+JSONArray = List[Any]
+JSONStructure = Union[JSONArray, JSONObject]
+
 router = APIRouter(
     prefix="/soap",
     tags=["wsdl-wrapper"],
@@ -18,7 +26,7 @@ router = APIRouter(
 )
 
 {% for operation in operations_definition %}
-@router.get("/{{operation.operation_name.lower()}}/{% for param in operation.operation_params_lst %}{%raw%}{{% endraw %}{{param}}{%raw%}}{% endraw %}/{% endfor %}")
+@router.{{operation.operation_type}}("/{{operation.operation_name.lower()}}{{operation.operation_qs_params}}")
 def call_{{operation.operation_name.lower()}}({{operation.operation_fun_params}}):
 
     logger.info(f"Called: call_{{operation.operation_name.lower()}} > {%raw%}{locals()}{% endraw %}")
@@ -28,5 +36,14 @@ def call_{{operation.operation_name.lower()}}({{operation.operation_fun_params}}
     if {{param}} is not None:
       wsdl_params["{{param}}"] = {{param}}
     {% endfor %}
-    return client.service.{{operation.operation_name}}(**wsdl_params)
+    {% if operation.operation_type == 'post' %}
+    res = client.service.{{operation.operation_name}}(wsdl_params)
+    {% else %}
+    res = client.service.{{operation.operation_name}}(**wsdl_params)
+    {% endif%}
+
+    input_dict = helpers.serialize_object(res)
+    output_dict = json.loads(json.dumps(input_dict))
+
+    return output_dict  
 {% endfor %}

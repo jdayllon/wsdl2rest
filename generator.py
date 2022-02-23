@@ -1,17 +1,38 @@
 import jinja2, zeep
 import os 
+from pprint import pprint
 
 WSDL_URL = os.environ['WSDL_URL']
 
 client = zeep.Client(WSDL_URL)
 
-# Transforms zeep types into python types
-def translate_xsd_python_type(type_name):
-  python_type = getattr(zeep.xsd.types.builtins, type_name.split('(')[0]).accepted_types[0]
-  if python_type == "_Decimal":
-    return "Decimal"
+def __get_python_type(soap_type_definition):
+  if type(soap_type_definition) is dict:
+    return dict
   else:
-    return python_type
+    python_type = getattr(zeep.xsd.types.builtins, soap_type_definition.split('(')[0]).accepted_types[0]
+    if python_type == "_Decimal":
+      return "Decimal"
+    else:
+      return python_type
+
+# Transforms zeep types into python types
+def translate_xsd_python_type(soap_type):
+
+  if type(soap_type) is dict and len(soap_type.keys()) == 1:
+    return str
+  elif type(soap_type) is dict and len(soap_type.keys()) > 1:
+    type_format = {}
+    for k,v in soap_type.items():
+      c_v_type = __get_python_type(v['type']).__name__
+      if c_v_type == 'dict':
+        type_format[k] = translate_xsd_python_type(v['type']).__name__
+      else:
+        type_format[k] = c_v_type
+    return type_format
+  else:
+    return __get_python_type(soap_type)
+
 
 ## Based on StackOverflow answer by user "jessy_galley" 
 ## https://stackoverflow.com/a/50093489
@@ -45,16 +66,18 @@ for service in client.wsdl.services.values():
         interface[service.name][port.name]['operations'] = operations
 
 operations_definition = []
+pprint("--------")
+pprint(operations)
+pprint("--------")
 
 # Obtains operations from the WSDL
 for cur_operation in list(operations.keys()):
-
+  pprint(cur_operation)
   # Obtains the input parameters for the operation
   cur_params = list(operations[cur_operation]['input'].keys())
 
   # Builds query string parameters
-  cur_operation_qs_params = '/'.join(cur_params)
-  cur_operation_qs_params
+  cur_operation_qs_params = ''#.join(cur_params)
 
   # Builds function parameters definition
   cur_operation_fun_params_lst = []
@@ -63,8 +86,16 @@ for cur_operation in list(operations.keys()):
     
     if v['optional']:
       cur_operation_fun_param = f"{k}:Optional[{ translate_xsd_python_type(v['type']).__name__ }]"
+      cur_operation_type = 'get'
     else:
-      cur_operation_fun_param = f"{k}:{ translate_xsd_python_type(v['type']).__name__ }"
+      translated_type = translate_xsd_python_type(v['type'])
+      if hasattr(translated_type,"__name__"):
+        cur_operation_fun_param = f"{k}:{ translated_type.__name__ }"
+        cur_operation_qs_params = f"{cur_operation_qs_params}/{{{k}}}"
+        cur_operation_type = 'get'
+      else:
+        cur_operation_fun_param = f"{k}:JSONStructure"
+        cur_operation_type = 'post'
 
     cur_operation_fun_params_lst += [cur_operation_fun_param]
 
@@ -75,6 +106,7 @@ for cur_operation in list(operations.keys()):
     'operation_qs_params': cur_operation_qs_params,
     'operation_fun_params': cur_operation_fun_params,
     'operation_params_lst': cur_params,
+    'operation_type': cur_operation_type,
   }]
 
 # Prints the REST API definition

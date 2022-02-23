@@ -9,6 +9,7 @@ fastapi = "*"
 requests = "*"
 jinja2 = "*"
 uvicorn = "*"
+ipdb = "*"
 
 [dev-packages]
 
