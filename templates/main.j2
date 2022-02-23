@@ -1,0 +1,14 @@
+from fastapi import FastAPI
+import custom
+import wsdl
+
+app = FastAPI()
+
+# Base Wrapper WSDL
+app.include_router(wsdl.router)
+
+# Custom code functions
+{% for custom_code_file in custom_code_files -%}
+app.include_router({{custom_code_file}}.router)
+{% endfor -%}
+# End custom code functions

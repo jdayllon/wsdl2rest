@@ -9,9 +9,10 @@ fastapi = "*"
 requests = "*"
 jinja2 = "*"
 uvicorn = "*"
-ipdb = "*"
+typer = "*"
 
 [dev-packages]
+ipdb = "*"
 
 [requires]
 python_version = "3.8"

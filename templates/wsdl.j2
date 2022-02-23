@@ -13,7 +13,7 @@ from config import LogConfig
 dictConfig(LogConfig().dict())
 logger = logging.getLogger("wsdl-wrapper")
 
-client = zeep.Client('{{WSDL_URL}}')
+client = zeep.Client('{{wsdl_url}}')
 
 JSONObject = Dict[AnyStr, Any]
 JSONArray = List[Any]
